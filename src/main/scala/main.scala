@@ -1,6 +1,6 @@
 package myapp
 
-import scala.slick.driver.PostgresDriver.simple._
+import MyPostgresDriver.simple._
 import scala.util.control.Exception._
 
 object MyApp extends App{
@@ -31,12 +31,15 @@ object MyApp extends App{
   }
   val coffees = TableQuery[Coffees]
 
+  class CoffeesForUpdate(tag: Tag) extends Coffees(tag) with ForUpdateTable
+  val coffeesForUpdate = TableQuery[CoffeesForUpdate]
+
   Database.forURL("jdbc:postgresql:test1", driver = "org.postgresql.Driver") withSession {
     implicit session =>
 
       allCatch opt (suppliers.ddl ++ coffees.ddl).create
       val q = for {
-        c <- coffees if c.price < 9.0
+        c <- coffeesForUpdate if c.price < 9.0
         s <- suppliers if s.id === c.supID
       } yield (c.name, s.name)
       q.list
